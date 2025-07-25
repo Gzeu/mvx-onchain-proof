@@ -1,0 +1,11 @@
+[package]
+name = "onchain-proof"
+version = "0.1.0"
+authors = ["Your Name <youremail@example.com>"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+multiversx-sc = "0.47.0"
+multiversx-sc-meta = "0.47.0"

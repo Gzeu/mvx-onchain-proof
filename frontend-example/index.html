@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>MVX OnChain Proof Demo</title>
+</head>
+<body>
+  <h2>Claim your on-chain proof</h2>
+  <button onclick="promptProof()">Mint Proof</button>
+  <script>
+    function promptProof() {
+      const desc = prompt('Ce vrei să atestezi? Ex: “Participant hackathon 2025”');
+      if (desc) {
+        alert('Proof-ul tău va fi salvat on-chain!\n' + desc);
+        // Integrare SDK dApp/JS call pentru a trimite către contract
+      }
+    }
+  </script>
+</body>
+</html>
