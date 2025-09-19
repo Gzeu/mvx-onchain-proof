@@ -1,11 +1,31 @@
 [package]
 name = "onchain-proof"
-version = "0.1.0"
-authors = ["Your Name <youremail@example.com>"]
+version = "0.2.0"
+authors = ["George Pricop <pricopgeorge@gmail.com>"]
+description = "Universal smart contract for blockchain badges, certificates and attestations on MultiversX"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/Gzeu/mvx-onchain-proof"
+keywords = ["blockchain", "certificate", "badge", "attestation", "multiversx"]
+categories = ["cryptography"]
+readme = "../README.md"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-multiversx-sc = "0.47.0"
-multiversx-sc-meta = "0.47.0"
+multiversx-sc = "0.50.0"
+
+[dev-dependencies]
+multiversx-sc-scenario = "0.50.0"
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+panic = "abort"
+overflow-checks = false
+
+[[bin]]
+name = "onchain-proof-meta"
+path = "meta/src/main.rs"
