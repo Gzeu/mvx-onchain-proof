@@ -1,60 +1,91 @@
-# 🏷️ MultiversX On-Chain Proof Plugin
+# 🏷️ MultiversX OnChain Proof
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![MultiversX](https://img.shields.io/badge/MultiversX-Smart%20Contract-blue)](https://multiversx.com/)
-[![Version](https://img.shields.io/badge/Version-0.1.0-green)](https://github.com/Gzeu/mvx-onchain-proof)
+[![MultiversX](https://img.shields.io/badge/MultiversX-Smart%20Contract-00D4AA)](https://multiversx.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 
-**Universal smart contract pentru badge/certificat/atestare pe blockchain MultiversX - 100% sigur, fără fonduri!**
+> **Universal smart contract for badges, certificates, and attestations on MultiversX blockchain - 100% secure, zero fund management!**
 
-## 🎯 Ce face?
+A comprehensive solution for creating immutable, verifiable proofs on the MultiversX blockchain. Perfect for certificates, badges, timestamps, and professional attestations with zero financial risk.
 
-Acest smart contract permite oricui să **"stampeze"** o dovadă permanentă pe blockchain-ul MultiversX:
-- ✅ **Badge-uri de participare** (hackathon, evenimente, cursuri)
-- ✅ **Certificate de finalizare** (proiecte, training-uri)  
-- ✅ **Timestamp-uri verificabile** (dovezi de existență)
-- ✅ **Atestări profesionale** (competențe, realizări)
-- ✅ **Complet GRATUIT** - nu gestionează fonduri, zero risc financiar!
+## ✨ Features
 
-## 🏗️ Arhitectură
+### 🔒 **Zero-Risk Design**
+- **No fund management** - Smart contract doesn't handle any tokens
+- **Read-only wallet access** - Cannot access your private keys
+- **Gas-only costs** - Only pay network fees (~$0.001 EGLD)
 
+### 🎯 **Multiple Use Cases**
+- **🏆 Event Badges** - Hackathons, conferences, workshops
+- **📜 Certificates** - Course completions, achievements, qualifications  
+- **⏰ Timestamps** - Document existence proofs, IP protection
+- **💼 Professional Attestations** - Skills, endorsements, milestones
+- **🔐 Identity Verification** - KYC proofs, identity confirmations
+
+### 🚀 **Advanced Features**
+- **Multiple proofs per user** - Store unlimited certificates
+- **Unique proof IDs** - Prevent duplicates and conflicts
+- **Metadata support** - Rich data structures
+- **Proof ownership** - Transfer and manage certificates
+- **Event logging** - Track all proof activities
+- **Modern React frontend** - Professional user interface
+- **Multi-wallet support** - Web, Extension, WalletConnect, Hardware
+
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    A[React Frontend] --> B[MultiversX SDK]
+    B --> C[Smart Contract]
+    C --> D[MultiversX Blockchain]
+    
+    E[Web Wallet] --> B
+    F[Extension Wallet] --> B
+    G[WalletConnect] --> B
+    H[Hardware Wallet] --> B
+    
+    C --> I[Proof Storage]
+    C --> J[Event Logs]
+    C --> K[Ownership Mapping]
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Frontend      │───▶│  Smart Contract  │───▶│   Blockchain    │
-│   (HTML/JS)     │    │  (OnChainProof)  │    │   (MultiversX)  │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
 
-**Funcții principale:**
-- `certifyAction(proof)` - Salvează o dovadă on-chain
-- `getProof(user)` - Returnează dovada unui utilizator
+## 🚀 Quick Start
 
-## 🚀 Instalare & Deploy Rapid
+### Prerequisites
 
-### Prerequisite
 ```bash
-# Instalează MultiversX SDK
+# Install MultiversX CLI
 pipx install multiversx-sdk-cli --force
 
-# Verifică instalarea
+# Verify installation
 mxpy --version
 ```
 
 ### 1. Clone Repository
+
 ```bash
 git clone https://github.com/Gzeu/mvx-onchain-proof.git
 cd mvx-onchain-proof
 ```
 
-### 2. Build Contract
+### 2. Smart Contract Setup
+
 ```bash
 cd contract
+
+# Install dependencies
 mxpy deps install rust --overwrite
+
+# Build contract
 sc-meta all build
 ```
 
-### 3. Deploy pe DevNet
+### 3. Deploy Contract
+
+#### DevNet Deployment
 ```bash
-# Asigură-te că ai walletKey.json în directorul contract/
 mxpy contract deploy \
   --bytecode=./output/onchain-proof.wasm \
   --keyfile=walletKey.json \
@@ -64,7 +95,7 @@ mxpy contract deploy \
   --send
 ```
 
-### 4. Deploy pe MainNet
+#### MainNet Deployment
 ```bash
 mxpy contract deploy \
   --bytecode=./output/onchain-proof.wasm \
@@ -75,196 +106,414 @@ mxpy contract deploy \
   --send
 ```
 
-## 💡 Exemple de Utilizare
+### 4. Frontend Setup
 
-### Certificat de Participare Hackathon
+```bash
+cd frontend-modern
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## 📖 Smart Contract API
+
+### Core Functions
+
+#### `certify_action(proof_text, proof_id, metadata?)`
+**Creates a new proof certificate**
+
 ```rust
-proof = "HACKATHON_2025_PARTICIPANT|George_Pricop|2025-09-19|MultiversX_Bucharest"
+// Parameters
+proof_text: ManagedBuffer  // Certificate description (1-500 chars)
+proof_id: ManagedBuffer    // Unique identifier
+metadata: OptionalValue<ManagedBuffer>  // Additional data
+
+// Gas Cost: ~50,000 gas
 ```
 
-### Badge de Finalizare Curs
+#### `update_proof(proof_id, new_proof_text, new_metadata?)`
+**Updates an existing proof (owner only)**
+
 ```rust
-proof = "BLOCKCHAIN_COURSE_COMPLETED|Smart_Contracts_Advanced|Score:95|Institution:TechAcademy"
+// Parameters
+proof_id: ManagedBuffer           // Existing proof ID
+new_proof_text: ManagedBuffer     // Updated description
+new_metadata: OptionalValue<ManagedBuffer>  // Updated metadata
 ```
 
-### Dovadă de Existență Document
+### Query Functions
+
+#### `get_proof(user, proof_id) -> ProofData`
+**Retrieves a specific proof**
+
+#### `get_user_proofs(user) -> Array<ProofData>`
+**Gets all proofs for a user**
+
+#### `get_user_proof_ids(user) -> Array<string>`
+**Lists all proof IDs for a user**
+
+#### `get_proof_owner(proof_id) -> Address`
+**Returns the owner of a proof**
+
+#### `get_total_proofs() -> number`
+**Gets total number of proofs in system**
+
+### Data Structures
+
 ```rust
-proof = "DOCUMENT_HASH|SHA256:a1b2c3d4e5f6|Timestamp:1695154800|Type:Contract"
+pub struct ProofData {
+    pub proof_text: ManagedBuffer,  // Certificate description
+    pub timestamp: u64,             // Creation timestamp
+    pub proof_id: ManagedBuffer,    // Unique identifier
+    pub metadata: ManagedBuffer,    // Additional data
+}
 ```
 
-## 🌐 Frontend Demo
+## 💡 Usage Examples
 
-Exemplu simplu în [frontend-example/index.html](frontend-example/index.html):
+### Hackathon Participation Badge
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>MVX OnChain Proof Demo</title>
-</head>
-<body>
-    <h2>🏷️ Claim Your On-Chain Proof</h2>
-    <input id="proofInput" placeholder="Descrie dovada ta...">
-    <button onclick="submitProof()">Mint Proof</button>
-    
-    <script>
-        function submitProof() {
-            const proof = document.getElementById('proofInput').value;
-            if (proof) {
-                // Integrare cu MultiversX SDK
-                alert('Proof-ul va fi salvat on-chain: ' + proof);
-            }
-        }
-    </script>
-</body>
-</html>
-```
-
-## 📖 API Documentation
-
-### Smart Contract Methods
-
-#### `certifyAction(proof: ManagedBuffer)`
-**Scop:** Salvează o dovadă on-chain pentru utilizatorul curent
-
-**Parametri:**
-- `proof` - Text care descrie dovada/certificatul
-
-**Gas Cost:** ~50,000 gas
-
-**Exemplu:**
 ```javascript
-await contract.certifyAction("HACKATHON_WINNER_2025");
+const proofData = {
+  proof_text: "Participated in MultiversX Hackathon 2025 - Blockchain category",
+  proof_id: "HACKATHON_2025_MVX_GEORGE_001",
+  metadata: JSON.stringify({
+    event: "MultiversX Hackathon 2025",
+    category: "Blockchain Development",
+    location: "Bucharest, Romania",
+    date: "2025-09-19",
+    organizer: "MultiversX Foundation"
+  })
+};
+
+await contract.certify_action(proofData.proof_text, proofData.proof_id, proofData.metadata);
 ```
 
-#### `getProof(user: ManagedAddress) -> ManagedBuffer`
-**Scop:** Returnează dovada salvată pentru un utilizator
+### Course Completion Certificate
 
-**Parametri:**
-- `user` - Adresa utilizatorului
-
-**Return:** Text-ul dovezii sau buffer gol
-
-**Exemplu:**
 ```javascript
-const proof = await contract.getProof("erd1...");
+const certificateData = {
+  proof_text: "Successfully completed Advanced Smart Contracts Development Course",
+  proof_id: "CERT_SMART_CONTRACTS_ADV_2025_001",
+  metadata: JSON.stringify({
+    course: "Advanced Smart Contracts Development",
+    institution: "TechAcademy",
+    score: 95,
+    duration: "6 weeks",
+    skills: ["Rust", "MultiversX", "DeFi", "NFTs"]
+  })
+};
 ```
 
-## 🎯 Use Cases Practice
+### Document Timestamp Proof
 
-### 1. Sistem de Certificate Educaționale
-```
-Proof Format: "CERT|{course_name}|{completion_date}|{score}|{institution}"
-Exemplu: "CERT|Blockchain Development|2025-09-19|98|TechUniversity"
+```javascript
+const timestampData = {
+  proof_text: "Document existence proof for intellectual property",
+  proof_id: "IP_PROOF_2025_PATENT_APPLICATION_001",
+  metadata: JSON.stringify({
+    document_hash: "sha256:a1b2c3d4e5f6789...",
+    document_type: "Patent Application",
+    author: "George Pricop",
+    title: "Innovative Blockchain Solution"
+  })
+};
 ```
 
-### 2. Badge-uri Evenimente
-```
-Proof Format: "EVENT|{event_name}|{date}|{role}|{location}"
-Exemplu: "EVENT|MultiversX Hackathon|2025-09-19|Participant|Bucharest"
-```
+## 🌐 Frontend Features
 
-### 3. Verificare Documente
-```
-Proof Format: "DOC|{doc_hash}|{timestamp}|{type}"
-Exemplu: "DOC|sha256:abc123...|1695154800|Contract"
-```
+### Modern React Interface
+- **🎨 Tailwind CSS** - Beautiful, responsive design
+- **🔌 Multi-wallet support** - Web, Extension, WalletConnect, Hardware
+- **📱 Mobile responsive** - Works on all devices
+- **🌙 Dark/Light mode** - User preference support
+- **📊 Dashboard** - View all your proofs
+- **🔍 Search & Filter** - Find proofs quickly
+- **📤 Export options** - PDF, JSON export
+- **🔗 Share proofs** - Generate shareable links
+
+### Key Components
+- **Wallet Connection** - Seamless wallet integration
+- **Proof Creation** - Intuitive certificate builder
+- **Proof Gallery** - Visual proof management
+- **Verification Tools** - Validate any proof
+- **Analytics** - Usage statistics and insights
 
 ## 🔧 Development
 
-### Structura Proiectului
+### Project Structure
+
 ```
 mvx-onchain-proof/
-├── contract/
-│   ├── src/lib.rs          # Smart contract logic
-│   ├── Cargo.toml          # Dependencies
-│   └── output/             # Build artifacts
-├── frontend-example/
-│   └── index.html          # Demo frontend
-├── tests/                  # Unit tests (coming soon)
-├── docs/                   # Documentation (coming soon)
-└── README.md
+├── contract/                 # Smart contract (Rust)
+│   ├── src/lib.rs           # Main contract logic
+│   ├── Cargo.toml           # Rust dependencies
+│   └── output/              # Build artifacts
+├── frontend-modern/         # Modern React frontend
+│   ├── src/                 # React components
+│   ├── package.json         # Node.js dependencies
+│   └── vite.config.ts       # Build configuration
+├── frontend-example/        # Simple HTML demo
+├── deploy-scripts/          # Deployment automation
+├── .github/                 # CI/CD workflows
+└── docs/                    # Documentation
 ```
 
-### Testing Local
+### Smart Contract Development
+
 ```bash
-# Run contract tests (coming soon)
+# Run tests
 cd contract
 cargo test
 
-# Start local devnet (coming soon)  
-mxpy localnet setup
-mxpy localnet start
+# Check contract
+sc-meta all build
+
+# Generate ABI
+sc-meta all abi
+```
+
+### Frontend Development
+
+```bash
+# Development mode
+cd frontend-modern
+npm run dev
+
+# Type checking
+npm run type-check
+
+# Linting
+npm run lint
+
+# Production build
+npm run build
+```
+
+### Testing
+
+```bash
+# Smart contract tests
+cd contract && cargo test
+
+# Frontend tests
+cd frontend-modern && npm test
+
+# E2E tests
+npm run test:e2e
+```
+
+## 📊 Proof Format Standards
+
+### Educational Certificates
+```json
+{
+  "type": "EDUCATION",
+  "course": "Course Name",
+  "institution": "Institution Name",
+  "completion_date": "2025-09-19",
+  "score": 95,
+  "duration": "Duration",
+  "skills": ["skill1", "skill2"]
+}
+```
+
+### Event Participation
+```json
+{
+  "type": "EVENT",
+  "event_name": "Event Name",
+  "date": "2025-09-19",
+  "role": "Participant/Speaker/Organizer",
+  "location": "City, Country",
+  "category": "Technology/Business/etc"
+}
+```
+
+### Professional Attestation
+```json
+{
+  "type": "PROFESSIONAL",
+  "skill": "Skill Name",
+  "level": "Beginner/Intermediate/Advanced/Expert",
+  "endorser": "Company/Organization",
+  "valid_until": "2026-09-19",
+  "verification_url": "https://..."
+}
 ```
 
 ## 🛣️ Roadmap
 
-### ✅ Phase 1 - MVP (Completed)
-- [x] Basic smart contract
-- [x] Simple frontend example
-- [x] Deploy instructions
+### ✅ Phase 1 - Foundation (Completed)
+- [x] Basic smart contract with single proof per user
+- [x] Simple HTML frontend
+- [x] Deployment scripts
+- [x] Basic documentation
 
-### 🔄 Phase 2 - Enhanced Features (In Progress)
-- [ ] Multiple proofs per user
-- [ ] Timestamp support
-- [ ] Event logging
-- [ ] Metadata structure
-- [ ] Proof categories
+### ✅ Phase 2 - Enhanced Smart Contract (Completed)
+- [x] Multiple proofs per user
+- [x] Unique proof ID system
+- [x] Metadata support
+- [x] Proof ownership tracking
+- [x] Update functionality
+- [x] Event logging
 
-### 🎯 Phase 3 - Advanced Features (Planned)
-- [ ] Modern React frontend
-- [ ] MultiversX SDK integration
-- [ ] Wallet connection
-- [ ] Proof history viewer
-- [ ] Search functionality
-- [ ] Export certificates
+### ✅ Phase 3 - Modern Frontend (Completed)
+- [x] React + TypeScript application
+- [x] Tailwind CSS styling
+- [x] Multi-wallet integration
+- [x] Responsive design
+- [x] Proof management dashboard
 
-### 🚀 Phase 4 - Production Ready (Future)
-- [ ] Unit & integration tests
-- [ ] CI/CD pipeline
-- [ ] Security audit
-- [ ] Performance optimization
-- [ ] Mobile app support
+### 🔄 Phase 4 - Advanced Features (In Progress)
+- [ ] Proof templates system
+- [ ] Batch operations
+- [ ] Proof expiration dates
+- [ ] Digital signatures integration
+- [ ] IPFS metadata storage
+- [ ] QR code generation
+- [ ] Mobile app
+
+### 🎯 Phase 5 - Enterprise Features (Planned)
+- [ ] Organization accounts
+- [ ] Bulk certificate issuance
+- [ ] API endpoints
+- [ ] Webhook notifications
+- [ ] Advanced analytics
+- [ ] White-label solutions
+- [ ] Integration plugins
+
+### 🚀 Phase 6 - Ecosystem Integration (Future)
+- [ ] Cross-chain compatibility
+- [ ] DID integration
+- [ ] Educational platform partnerships
+- [ ] Employer verification tools
+- [ ] Marketplace for certificates
+- [ ] AI-powered verification
 
 ## 🤝 Contributing
 
-Contribuțiile sunt binevenite! Pentru a contribui:
+We welcome contributions! Here's how to get started:
 
-1. Fork repository-ul
-2. Creează un branch pentru feature (`git checkout -b feature/amazing-feature`)
-3. Commit schimbările (`git commit -m 'Add amazing feature'`)
-4. Push pe branch (`git push origin feature/amazing-feature`)
-5. Deschide un Pull Request
+### Development Setup
 
-### Guidelines
-- Respectă coding standards
-- Adaugă teste pentru noi funcționalități
-- Actualizează documentația
-- Descrie clar modificările în PR
+1. **Fork the repository**
+2. **Clone your fork**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/mvx-onchain-proof.git
+   cd mvx-onchain-proof
+   ```
+3. **Create a feature branch**
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+4. **Make your changes**
+5. **Test thoroughly**
+   ```bash
+   # Test smart contract
+   cd contract && cargo test
+   
+   # Test frontend
+   cd frontend-modern && npm test
+   ```
+6. **Commit your changes**
+   ```bash
+   git commit -m 'Add amazing feature'
+   ```
+7. **Push and create PR**
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+
+### Contribution Guidelines
+
+- **Code Quality**: Follow existing patterns and style
+- **Testing**: Add tests for new features
+- **Documentation**: Update docs for any changes
+- **Security**: No fund handling, security-first approach
+- **Performance**: Optimize gas usage in smart contracts
+
+### Development Standards
+
+- **Smart Contract**: Rust with MultiversX framework
+- **Frontend**: React + TypeScript + Tailwind CSS
+- **Testing**: Comprehensive unit and integration tests
+- **Security**: Regular audits and best practices
+- **Documentation**: Clear, comprehensive, up-to-date
 
 ## ❓ FAQ
 
-**Q: Este sigur să folosesc acest contract?**
-A: Da! Contract-ul nu gestionează fonduri și nu poate accesa wallet-ul tău.
+### Security & Safety
 
-**Q: Cât costă să "mint" o dovadă?**
-A: Doar gas fee-ul pentru tranzacție (~$0.001 EGLD pe devnet/mainnet).
+**Q: Is it safe to use this smart contract?**
+**A:** Absolutely! The contract doesn't handle any funds and cannot access your wallet beyond signing transactions.
 
-**Q: Pot să șterg o dovadă după ce am salvat-o?**
-A: Nu, dovezile sunt permanente pe blockchain (acesta este scopul).
+**Q: What are the costs?**
+**A:** Only network gas fees (~$0.001 EGLD per proof on mainnet, even less on devnet).
 
-**Q: Câte dovezi pot să salvez?**
-A: Versiunea actuală permite o dovadă per utilizator. Versiunea viitoare va suporta multiple.
+**Q: Can my proofs be deleted or modified by others?**
+**A:** No! Only you can update your own proofs, and all changes are logged on the blockchain.
 
-**Q: Pot să verific dovada altcuiva?**
-A: Da, folosind metoda `getProof()` cu adresa lor publică.
+### Functionality
+
+**Q: How many proofs can I create?**
+**A:** Unlimited! The upgraded contract supports multiple proofs per user.
+
+**Q: Can I verify someone else's proof?**
+**A:** Yes! All proofs are publicly verifiable using the user's address and proof ID.
+
+**Q: Do proofs expire?**
+**A:** No, all proofs are permanent on the blockchain. Future versions may include optional expiration dates.
+
+**Q: Can I export my certificates?**
+**A:** Yes! The frontend allows exporting proofs as PDF certificates or JSON data.
+
+### Technical
+
+**Q: Which wallets are supported?**
+**A:** Web Wallet, Browser Extensions (DeFi Wallet), WalletConnect, and Hardware Wallets (Ledger).
+
+**Q: Can I integrate this into my application?**
+**A:** Yes! The smart contract is open-source and provides a complete API for integration.
+
+**Q: Is there an API for developers?**
+**A:** The smart contract provides view functions. A REST API is planned for future releases.
 
 ## 📄 License
 
-Acest proiect este licențiat sub [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.
+
+## 🌟 Acknowledgments
+
+- **MultiversX Team** - For the amazing blockchain platform
+- **MultiversX Community** - For support and feedback
+- **Contributors** - Everyone who helped improve this project
+- **Testers** - Community members who tested and reported issues
+
+## 📞 Support & Contact
+
+- **Developer**: [George Pricop](https://github.com/Gzeu)
+- **Email**: pricopgeorge@gmail.com
+- **GitHub**: [@Gzeu](https://github.com/Gzeu)
+- **Issues**: [GitHub Issues](https://github.com/Gzeu/mvx-onchain-proof/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/Gzeu/mvx-onchain-proof/discussions)
 
 ---
 
-**Creat de:** [George Pricop](https://github.com/Gzeu) | **Contact:** [GitHub](https://github.com/Gzeu)
+<div align="center">
 
-⭐ Dacă îți place proiectul, oferă-i o stea pe GitHub!
+**⭐ Star this repository if you find it useful!**
+
+[![GitHub stars](https://img.shields.io/github/stars/Gzeu/mvx-onchain-proof?style=social)](https://github.com/Gzeu/mvx-onchain-proof/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Gzeu/mvx-onchain-proof?style=social)](https://github.com/Gzeu/mvx-onchain-proof/network/members)
+[![GitHub watchers](https://img.shields.io/github/watchers/Gzeu/mvx-onchain-proof?style=social)](https://github.com/Gzeu/mvx-onchain-proof/watchers)
+
+**Built with ❤️ for the MultiversX community**
+
+</div>
