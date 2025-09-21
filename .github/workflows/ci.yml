@@ -9,247 +9,261 @@ on:
     types: [ published ]
 
 env:
-  NODE_VERSION: '18'
-  RUST_VERSION: 'stable'
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
-  # Smart Contract Jobs
-  contract-lint:
-    name: Contract Linting
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-          
-      - name: Cache cargo dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            contract/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('contract/Cargo.lock') }}
-          
-      - name: Run rustfmt
-        working-directory: ./contract
-        run: cargo fmt -- --check
-        
-      - name: Run clippy
-        working-directory: ./contract
-        run: cargo clippy -- -D warnings
-
-  contract-build:
-    name: Build Smart Contract
-    runs-on: ubuntu-latest
-    needs: contract-lint
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Install MultiversX SC Meta
-        run: |
-          cargo install multiversx-sc-meta --locked
-          
-      - name: Cache cargo dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            contract/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('contract/Cargo.lock') }}
-          
-      - name: Build contract
-        working-directory: ./contract
-        run: |
-          sc-meta all build --target-dir ../output
-          
-      - name: Upload contract artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: smart-contract
-          path: |
-            output/
-            contract/output/
-          retention-days: 30
-
+  # Smart Contract Testing
   contract-test:
-    name: Test Smart Contract
+    name: Smart Contract Tests
     runs-on: ubuntu-latest
-    needs: contract-build
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        
-      - name: Cache cargo dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            contract/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('contract/Cargo.lock') }}
-          
-      - name: Run tests
+    defaults:
+      run:
         working-directory: ./contract
-        run: cargo test --verbose
-
-  # Frontend Jobs
-  frontend-build:
-    name: Build Frontend
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: frontend-modern/package-lock.json
-          
-      - name: Install dependencies
-        working-directory: ./frontend-modern
-        run: npm ci
-        
-      - name: Type check
-        working-directory: ./frontend-modern
-        run: npm run type-check
-        
-      - name: Lint code
-        working-directory: ./frontend-modern
-        run: npm run lint
-        
-      - name: Build application
-        working-directory: ./frontend-modern
-        run: npm run build
-        
-      - name: Upload frontend build
-        uses: actions/upload-artifact@v3
-        with:
-          name: frontend-build
-          path: frontend-modern/dist/
-          retention-days: 30
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+        targets: wasm32-unknown-unknown
+        components: rustfmt, clippy
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          contract/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Install MultiversX CLI
+      run: |
+        pip3 install multiversx-sdk-cli --upgrade --no-cache-dir
+        mxpy --version
+    
+    - name: Install contract dependencies
+      run: |
+        mxpy deps install rust --overwrite
+        sc-meta install all
+    
+    - name: Check formatting
+      run: cargo fmt --all -- --check
+    
+    - name: Run clippy
+      run: cargo clippy --all-targets --all-features -- -D warnings
+    
+    - name: Run tests
+      run: cargo test --verbose
+    
+    - name: Build contract
+      run: sc-meta all build --target-dir ../target --wasm-symbols
+    
+    - name: Generate ABI
+      run: sc-meta all abi
+    
+    - name: Upload contract artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: contract-artifacts
+        path: |
+          contract/output/*.wasm
+          contract/output/*.abi.json
+        retention-days: 30
 
-  # Security Scanning
-  security-scan:
-    name: Security Scan
+  # Frontend Testing
+  frontend-test:
+    name: Frontend Tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend-modern
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: frontend-modern/package-lock.json
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run type checking
+      run: npm run type-check
+    
+    - name: Run linting
+      run: npm run lint
+    
+    - name: Run tests
+      run: npm test -- --coverage --watchAll=false
+    
+    - name: Build frontend
+      run: npm run build
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-build-${{ matrix.node-version }}
+        path: frontend-modern/dist/
+        retention-days: 30
 
-  # Deployment Jobs
+  # Security Audit
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-audit-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Install cargo-audit
+      run: cargo install cargo-audit --locked
+    
+    - name: Run security audit
+      run: |
+        cd contract
+        cargo audit
+    
+    - name: Frontend security audit
+      run: |
+        cd frontend-modern
+        npm audit --audit-level=high
+
+  # Deploy to DevNet (on main branch)
   deploy-devnet:
     name: Deploy to DevNet
     runs-on: ubuntu-latest
-    needs: [contract-build, contract-test]
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-    environment: devnet
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Download contract artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: smart-contract
-          
-      - name: Install MultiversX CLI
-        run: |
-          pipx install multiversx-sdk-cli
-          
-      - name: Deploy to DevNet
-        run: |
-          # Note: This would require wallet secrets in GitHub Secrets
-          echo "DevNet deployment would happen here"
-          echo "Contract artifacts ready for deployment"
-          ls -la output/
-
-  deploy-mainnet:
-    name: Deploy to MainNet
-    runs-on: ubuntu-latest
-    needs: [contract-build, contract-test, security-scan]
-    if: github.event_name == 'release' && github.event.action == 'published'
-    environment: mainnet
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Download contract artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: smart-contract
-          
-      - name: Install MultiversX CLI
-        run: |
-          pipx install multiversx-sdk-cli
-          
-      - name: Deploy to MainNet
-        run: |
-          # Note: This would require wallet secrets in GitHub Secrets
-          echo "MainNet deployment would happen here"
-          echo "Contract artifacts ready for production deployment"
-          ls -la output/
-
-  # GitHub Pages Deployment
-  deploy-pages:
-    name: Deploy to GitHub Pages
-    runs-on: ubuntu-latest
-    needs: frontend-build
+    needs: [contract-test, frontend-test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    environment: devnet
+    
     steps:
-      - name: Download frontend build
-        uses: actions/download-artifact@v3
-        with:
-          name: frontend-build
-          path: ./dist
-          
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Download contract artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: contract-artifacts
+        path: contract/output/
+    
+    - name: Install MultiversX CLI
+      run: |
+        pip3 install multiversx-sdk-cli --upgrade --no-cache-dir
+        mxpy --version
+    
+    # Note: This would require wallet secrets in GitHub Secrets
+    # - name: Deploy to DevNet
+    #   env:
+    #     WALLET_PEM: ${{ secrets.DEVNET_WALLET_PEM }}
+    #   run: |
+    #     cd contract
+    #     echo "$WALLET_PEM" > walletKey.pem
+    #     mxpy contract deploy \
+    #       --bytecode=./output/onchain-proof.wasm \
+    #       --pem=walletKey.pem \
+    #       --gas-limit=100000000 \
+    #       --proxy=https://devnet-gateway.multiversx.com \
+    #       --chain=D \
+    #       --send
+    
+    - name: Build and Deploy Frontend
+      run: |
+        cd frontend-modern
+        npm ci
+        npm run build
+        echo "Frontend built successfully for DevNet deployment"
+        # Add your preferred deployment method here (Vercel, Netlify, etc.)
+
+  # Release (on tag creation)
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [contract-test, frontend-test, security-audit]
+    if: github.event_name == 'release'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Download contract artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: contract-artifacts
+        path: contract/output/
+    
+    - name: Download frontend build
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-build-20.x
+        path: frontend-build/
+    
+    - name: Create release archive
+      run: |
+        mkdir -p release-assets
         
-      - name: Upload to GitHub Pages
-        uses: actions/upload-pages-artifact@v2
-        with:
-          path: ./dist
+        # Contract artifacts
+        cp contract/output/*.wasm release-assets/
+        cp contract/output/*.abi.json release-assets/
+        
+        # Frontend build
+        tar -czf release-assets/frontend-build.tar.gz -C frontend-build .
+        
+        # Documentation
+        cp README.md release-assets/
+        cp LICENSE release-assets/
+        
+        # Create checksums
+        cd release-assets
+        sha256sum * > checksums.sha256
+    
+    - name: Upload release assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          release-assets/*.wasm
+          release-assets/*.abi.json
+          release-assets/frontend-build.tar.gz
+          release-assets/README.md
+          release-assets/LICENSE
+          release-assets/checksums.sha256
+        body: |
+          ## MultiversX OnChain Proof v${{ github.ref_name }}
           
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v2
+          ### Smart Contract
+          - `onchain-proof.wasm` - Compiled smart contract
+          - `onchain-proof.abi.json` - Contract ABI for integration
+          
+          ### Frontend
+          - `frontend-build.tar.gz` - Production React build
+          
+          ### Verification
+          - `checksums.sha256` - File integrity verification
+          
+          See [README.md](README.md) for deployment instructions.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
